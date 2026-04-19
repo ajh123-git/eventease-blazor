@@ -1,0 +1,21 @@
+@inherits LayoutComponentBase
+
+<div class="app-shell">
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand__mark">E</div>
+            <div>
+                <div class="brand__title">EventEase</div>
+                <p class="brand__subtitle">Simple event management</p>
+            </div>
+        </div>
+
+        <NavMenu />
+    </aside>
+
+    <main class="main-content">
+        <section class="page-surface">
+            @Body
+        </section>
+    </main>
+</div>

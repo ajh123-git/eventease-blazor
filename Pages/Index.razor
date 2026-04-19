@@ -1,0 +1,70 @@
+@page "/"
+@implements IDisposable
+@inject EventEase.Services.EventService EventService
+
+<PageTitle>EventEase | Home</PageTitle>
+
+<div class="hero">
+    <div class="hero__copy">
+        <p class="eyebrow">Event management</p>
+        <h1>Keep event details and attendance in one simple place.</h1>
+        <p class="hero__text">
+            EventEase is a small Blazor Server sample that shows routing, components,
+            validation, and shared state without extra clutter.
+        </p>
+
+        <div class="button-row">
+            <NavLink class="button" href="/events">View events</NavLink>
+            <NavLink class="button button--ghost" href="/register">Add an event</NavLink>
+        </div>
+    </div>
+
+    <div class="hero__panel">
+        <div class="stat-card">
+            <span class="stat-card__label">Tracked events</span>
+            <strong class="stat-card__value">@trackedEventCount</strong>
+            <span class="stat-card__hint">Stored in a shared service</span>
+        </div>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h2>Components</h2>
+                <p>Reusable cards keep the event list easy to read and maintain.</p>
+            </div>
+
+            <div class="feature-card">
+                <h2>Validation</h2>
+                <p>Forms use data annotations and simple if checks before saving.</p>
+            </div>
+
+            <div class="feature-card">
+                <h2>Attendance</h2>
+                <p>Increase attendee counts from the events page.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int trackedEventCount;
+
+    protected override void OnInitialized()
+    {
+        trackedEventCount = EventService.GetEventCount();
+        EventService.Changed += HandleEventsChanged;
+    }
+
+    private void HandleEventsChanged()
+    {
+        _ = InvokeAsync(() =>
+        {
+            trackedEventCount = EventService.GetEventCount();
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        EventService.Changed -= HandleEventsChanged;
+    }
+}

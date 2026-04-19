@@ -1,0 +1,117 @@
+@page "/register"
+@inject EventEase.Services.EventService EventService
+
+<PageTitle>EventEase | Register</PageTitle>
+
+<div class="page-header">
+    <div>
+        <p class="eyebrow">New event</p>
+        <h1>Register an event</h1>
+        <p class="page-header__text">Add a new event to the shared list using a validated form.</p>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(submissionMessage))
+{
+    <div class="status-banner status-banner--success">
+        @submissionMessage
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(submissionError))
+{
+    <div class="status-banner status-banner--error">
+        @submissionError
+    </div>
+}
+
+<EditForm Model="@NewEvent" OnValidSubmit="@HandleValidSubmit" OnInvalidSubmit="@HandleInvalidSubmit" @key="NewEvent">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-grid">
+        <label class="field">
+            <span>Title</span>
+            <InputText class="input" @bind-Value="NewEvent.Title" @bind-Value:event="oninput" />
+            <ValidationMessage For="@(() => NewEvent.Title)" />
+        </label>
+
+        <label class="field">
+            <span>Location</span>
+            <InputText class="input" @bind-Value="NewEvent.Location" @bind-Value:event="oninput" />
+            <ValidationMessage For="@(() => NewEvent.Location)" />
+        </label>
+
+        <label class="field">
+            <span>Date</span>
+            <InputDate TValue="DateTime" class="input" @bind-Value="NewEvent.Date" />
+        </label>
+
+        <label class="field">
+            <span>Attendees</span>
+            <InputNumber TValue="int" class="input" @bind-Value="NewEvent.Attendees" />
+            <ValidationMessage For="@(() => NewEvent.Attendees)" />
+        </label>
+    </div>
+
+    <div class="button-row">
+        <button type="submit" class="button">Save event</button>
+        <button type="button" class="button button--ghost" @onclick="ClearForm">Clear form</button>
+    </div>
+</EditForm>
+
+@code {
+    private EventItem NewEvent { get; set; } = new()
+    {
+        Date = DateTime.Today,
+        Attendees = 0
+    };
+
+    private string? submissionMessage;
+    private string? submissionError;
+
+    private Task HandleValidSubmit()
+    {
+        try
+        {
+            var savedTitle = NewEvent.Title.Trim();
+            EventService.AddEvent(NewEvent);
+            submissionMessage = $"{savedTitle} was added successfully.";
+            submissionError = null;
+            ResetForm();
+        }
+        catch (ArgumentException exception)
+        {
+            submissionMessage = null;
+            submissionError = exception.Message;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task HandleInvalidSubmit(EditContext editContext)
+    {
+        submissionMessage = null;
+        var errorCount = editContext.GetValidationMessages().Count();
+        submissionError = errorCount == 1
+            ? "Please fix the highlighted field and try again."
+            : $"Please fix the {errorCount} highlighted fields and try again.";
+        return Task.CompletedTask;
+    }
+
+    private void ClearForm()
+    {
+        ResetForm();
+        submissionMessage = null;
+        submissionError = null;
+    }
+
+    private void ResetForm()
+    {
+        NewEvent = new EventItem
+        {
+            Date = DateTime.Today,
+            Attendees = 0
+        };
+    }
+}

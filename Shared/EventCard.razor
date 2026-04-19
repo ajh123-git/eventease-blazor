@@ -1,0 +1,57 @@
+@using EventEase.Models
+
+<article class="event-card">
+    <div class="event-card__header">
+        <div>
+            <p class="event-card__date">@Event.Date.ToString("MMMM d, yyyy")</p>
+            <h3>@Event.Title</h3>
+            <p class="event-card__location">@Event.Location</p>
+        </div>
+
+        <div class="event-card__badge">
+            @Event.Attendees
+            <span>attendees</span>
+        </div>
+    </div>
+
+    <div class="event-card__body">
+        <label class="field field--inline">
+            <span>Edit attendees</span>
+            <input class="input input--compact" type="number" min="0" @bind="EditableAttendees" />
+        </label>
+
+        <div class="event-card__actions">
+            <button type="button" class="button button--secondary" @onclick="IncreaseAttendance">+1 attendee</button>
+            <button type="button" class="button button--ghost" @onclick="SaveAttendance">Save count</button>
+        </div>
+    </div>
+</article>
+
+@code {
+    [Parameter, EditorRequired]
+    public EventItem Event { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<int> AttendanceChanged { get; set; }
+
+    private int EditableAttendees { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        EditableAttendees = Event.Attendees;
+    }
+
+    private async Task IncreaseAttendance()
+    {
+        EditableAttendees += 1;
+        await SaveAttendance();
+    }
+
+    private async Task SaveAttendance()
+    {
+        if (AttendanceChanged.HasDelegate)
+        {
+            await AttendanceChanged.InvokeAsync(EditableAttendees);
+        }
+    }
+}

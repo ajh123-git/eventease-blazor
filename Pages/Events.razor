@@ -1,0 +1,91 @@
+@page "/events"
+@implements IDisposable
+@inject EventEase.Services.EventService EventService
+
+<PageTitle>EventEase | Events</PageTitle>
+
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Event list</p>
+        <h1>Events</h1>
+        <p class="page-header__text">Review every event and update attendance as it changes.</p>
+    </div>
+
+    <NavLink class="button" href="/register">Add event</NavLink>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(statusMessage))
+{
+    <div class="status-banner @statusMessageClass">
+        @statusMessage
+    </div>
+}
+
+@if (events.Count == 0)
+{
+    <div class="empty-state">
+        <h2>No events yet</h2>
+        <p>Add a new event from the registration page.</p>
+        <NavLink class="button" href="/register">Create event</NavLink>
+    </div>
+}
+else
+{
+    <div class="event-grid">
+        @foreach (var eventItem in events)
+        {
+            <EventCard @key="eventItem.Id"
+                       Event="eventItem"
+                       AttendanceChanged="@((int count) => UpdateAttendanceAsync(eventItem, count))" />
+        }
+    </div>
+}
+
+@code {
+    private IReadOnlyList<EventItem> events = Array.Empty<EventItem>();
+    private string? statusMessage;
+    private string statusMessageClass = "status-banner--success";
+
+    protected override void OnInitialized()
+    {
+        RefreshEvents();
+        EventService.Changed += HandleEventsChanged;
+    }
+
+    private void RefreshEvents()
+    {
+        events = EventService.GetEvents();
+    }
+
+    private void HandleEventsChanged()
+    {
+        _ = InvokeAsync(() =>
+        {
+            RefreshEvents();
+            StateHasChanged();
+        });
+    }
+
+    private Task UpdateAttendanceAsync(EventItem eventItem, int attendees)
+    {
+        try
+        {
+            EventService.UpdateAttendance(eventItem.Id, attendees);
+            RefreshEvents();
+            statusMessageClass = "status-banner--success";
+            statusMessage = $"{eventItem.Title} attendance updated to {attendees}.";
+        }
+        catch (ArgumentException exception)
+        {
+            statusMessageClass = "status-banner--error";
+            statusMessage = exception.Message;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        EventService.Changed -= HandleEventsChanged;
+    }
+}
